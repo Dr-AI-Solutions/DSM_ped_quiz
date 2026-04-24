@@ -1,0 +1,207 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>NeuroHitos Pro - Internado Medicina</title>
+    <!-- Carga de React y Tailwind desde CDN (No requiere instalación) -->
+    <script src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
+    <script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
+    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;600;800&display=swap');
+        body { font-family: 'Inter', sans-serif; }
+    </style>
+</head>
+<body class="bg-slate-50 text-slate-900">
+    <div id="root"></div>
+
+    <script type="text/babel">
+        const { useState, useEffect, useMemo } = React;
+
+        // --- POOL DE CASOS (He incluido una base sólida, puedes agregar más objetos aquí) ---
+        const ALL_CASES = [
+            {
+                age: "2 meses",
+                scenario: "Madre consulta porque su bebé de 2 meses 'no le responde'. Al evaluarlo, el lactante no presenta sonrisa social y no logra fijar la mirada en el examinador.",
+                options: ["Normal, aparece a los 3 meses", "Rezago, indicar estimulación", "Bandera Roja: Derivar a especialista", "Normal, solo falta madurez"],
+                correct: 2,
+                context: "A los 2 meses la sonrisa social y la fijación visual son mandatorias. Su ausencia sugiere déficit sensorial o trastorno del neurodesarrollo temprano.",
+                fact: "La sonrisa social no es solo un gesto, es la primera conexión del eje límbico con el entorno social."
+            },
+            {
+                age: "4 meses",
+                scenario: "Lactante de 4 meses que al ser traccionado a posición sentada presenta caída de la cabeza (head lag). No logra girar de prono a supino.",
+                options: ["Normal para la edad", "Signo de alerta: Hipotonía axial", "Falta de estimulación leve", "Normal en niños prematuros"],
+                correct: 1,
+                context: "A los 4 meses el control cefálico debe ser completo. El 'head lag' después de los 4 meses es un signo de alerta neurológica.",
+                fact: "El control cefálico es la 'piedra angular'. Sin esto, la arquitectura motora superior no tiene cimientos."
+            },
+            {
+                age: "6 meses",
+                scenario: "Niño de 6 meses que en posición prono no logra apoyarse en palmas con brazos extendidos. Al ofrecerle un juguete, no intenta agarrarlo.",
+                options: ["Retraso motor y de coordinación", "Normal, el agarre es a los 9 meses", "Falta de fuerza muscular normal", "Indicar andador"],
+                correct: 0,
+                context: "A los 6 meses el niño debe tener apoyo de palmas y prensión palmar voluntaria. No intentar alcanzar objetos es una alerta roja.",
+                fact: "El agarre voluntario marca la transición de 'reflejo' a 'intencional'. ¡Es el inicio de la voluntad!"
+            },
+            {
+                age: "9 meses",
+                scenario: "Lactante de 9 meses que se mantiene sentado solo, pero no logra realizar la pinza con los dedos (usa toda la palma). No responde a su nombre.",
+                options: ["Normal para la edad", "Alerta en comunicación y motricidad fina", "Solo retraso motor", "Normal si es hijo único"],
+                correct: 1,
+                context: "A los 9 meses ya esperamos pinza inmadura y respuesta clara al nombre. La falta de respuesta al nombre es un marcador temprano de TEA.",
+                fact: "Responder al nombre indica que el niño ya se reconoce como un ente separado del resto."
+            },
+            {
+                age: "12 meses",
+                scenario: "Niño de 1 año que camina apoyado de los muebles, pero no señala para pedir cosas. No dice ninguna palabra con significado.",
+                options: ["Normal en el área de lenguaje", "Retraso en comunicación (ausencia de señalar)", "Normal, los niños hablan a los 2 años", "Indicar bilingüismo"],
+                correct: 1,
+                context: "A los 12 meses, el señalar (pointing) es un hito crítico de comunicación social. Su ausencia es más preocupante que la falta de palabras.",
+                fact: "Señalar es 'lenguaje sin palabras'. Si no señala, la arquitectura de la comunicación está incompleta."
+            },
+            {
+                age: "15 meses",
+                scenario: "Niño de 15 meses que no camina de forma independiente, pero gatea muy rápido. No imita gestos simples como decir adiós.",
+                options: ["Normal hasta los 18 meses", "Alerta motora y social", "Solo falta de confianza", "Indicar zapatos ortopédicos"],
+                correct: 1,
+                context: "Aunque la marcha tiene hasta los 18 meses, la falta de imitación a los 15 meses es una señal de alerta en el área socio-emocional.",
+                fact: "La imitación es cómo aprendemos a ser humanos. Es la base de las neuronas espejo en acción."
+            },
+            {
+                age: "18 meses",
+                scenario: "Niño de 18 meses que no camina solo. Sube escaleras gateando. Dice 2 palabras.",
+                options: ["Es el límite superior, derivar a evaluación", "Normal si el gateo es bueno", "Normal hasta los 2 años", "Solo falta de calcio"],
+                correct: 0,
+                context: "Los 18 meses es el 'punto de corte' internacional para la marcha independiente. Si no camina, se debe estudiar la causa.",
+                fact: "La marcha libera las manos. Un niño que camina es un niño que empieza a manipular su entorno de forma compleja."
+            },
+            {
+                age: "24 meses",
+                scenario: "Niño de 2 años que no junta dos palabras. Tiene un vocabulario de 5 palabras. Entiende órdenes simples de un paso.",
+                options: ["Normal, ya hablará", "Retraso del lenguaje expresivo", "TEA probable", "Hipoacusia severa"],
+                correct: 1,
+                context: "A los 2 años esperamos frases de 2 palabras y al menos 50 palabras. Si entiende pero no habla, es un retraso del lenguaje expresivo.",
+                fact: "A los 2 años ocurre la 'explosión del vocabulario'. El cerebro crea conexiones lingüísticas a velocidad luz."
+            },
+            {
+                age: "3 años",
+                scenario: "Niño de 3 años que no logra saltar con ambos pies juntos. Se frustra fácilmente y no juega con otros niños.",
+                options: ["Normal por la pandemia", "Alerta en motricidad gruesa y área social", "Solo timidez", "Normal en varones"],
+                correct: 1,
+                context: "A los 3 años el salto con pies juntos y el inicio del juego asociativo son hitos esperados. La falta de interés social es bandera roja.",
+                fact: "El juego con otros es el laboratorio de la empatía y las reglas sociales."
+            },
+            {
+                age: "Cualquier edad",
+                scenario: "Paciente de 2 años que hablaba 20 palabras y caminaba bien. Tras un cuadro febril, dejó de hablar y ya no hace contacto visual.",
+                options: ["Pausa por enfermedad", "Regresión del desarrollo: Urgencia", "Efecto post-vacunal normal", "Falta de vitaminas"],
+                correct: 1,
+                context: "Cualquier pérdida de hitos es una REGRESIÓN. Es una emergencia neurológica que requiere estudio inmediato.",
+                fact: "La regresión es el síntoma más grave en pediatría del desarrollo. Nunca se ignora."
+            }
+        ];
+
+        function App() {
+            const [questions, setQuestions] = useState([]);
+            const [currentIdx, setCurrentIdx] = useState(0);
+            const [selected, setSelected] = useState(null);
+            const [showFeedback, setShowFeedback] = useState(false);
+            const [score, setScore] = useState(0);
+            const [view, setView] = useState('start');
+
+            const initGame = () => {
+                const shuffled = [...ALL_CASES].sort(() => 0.5 - Math.random()).slice(0, 10);
+                setQuestions(shuffled);
+                setCurrentIdx(0);
+                setScore(0);
+                setSelected(null);
+                setShowFeedback(false);
+                setView('play');
+            };
+
+            const handleAnswer = (idx) => {
+                if (showFeedback) return;
+                setSelected(idx);
+                setShowFeedback(true);
+                if (idx === questions[currentIdx].correct) setScore(s => s + 1);
+            };
+
+            const next = () => {
+                if (currentIdx < 9) {
+                    setCurrentIdx(c => c + 1);
+                    setSelected(null);
+                    setShowFeedback(false);
+                } else {
+                    setView('end');
+                }
+            };
+
+            if (view === 'start') return (
+                <div className="flex flex-col items-center justify-center min-h-screen p-6 text-center">
+                    <div className="bg-indigo-600 p-4 rounded-3xl mb-6 shadow-xl">
+                        <svg className="w-12 h-12 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z"></path></svg>
+                    </div>
+                    <h1 className="text-3xl font-extrabold mb-2">NeuroHitos Pro</h1>
+                    <p className="text-slate-500 mb-8 max-w-xs">Simulador de casos reales para el internado. 10 casos aleatorios para entrenar tu ojo clínico.</p>
+                    <button onClick={initGame} className="w-full max-w-xs bg-indigo-600 text-white font-bold py-4 rounded-2xl shadow-lg active:scale-95 transition-transform">INICIAR SESIÓN</button>
+                </div>
+            );
+
+            if (view === 'end') return (
+                <div className="flex flex-col items-center justify-center min-h-screen p-6 text-center">
+                    <h2 className="text-4xl mb-4">🏆</h2>
+                    <h2 className="text-2xl font-bold mb-2">Sesión Completada</h2>
+                    <p className="text-slate-500 mb-6">Diagnósticos acertados:</p>
+                    <div className="text-6xl font-black text-indigo-600 mb-8">{score} / 10</div>
+                    <button onClick={initGame} className="w-full max-w-xs bg-indigo-600 text-white font-bold py-4 rounded-2xl mb-4">REINTENTAR</button>
+                    <button onClick={() => setView('start')} className="text-slate-400 font-bold">VOLVER AL MENÚ</button>
+                </div>
+            );
+
+            const q = questions[currentIdx];
+
+            return (
+                <div className="max-w-xl mx-auto p-4 pt-8">
+                    <div className="flex justify-between items-center mb-6">
+                        <span className="text-[10px] font-black uppercase tracking-widest text-slate-400">Caso {currentIdx + 1} de 10</span>
+                        <span className="text-xs font-bold bg-indigo-100 text-indigo-700 px-3 py-1 rounded-full">{q.age}</span>
+                    </div>
+
+                    <div className="bg-white rounded-3xl shadow-xl p-6 mb-6 border border-slate-100">
+                        <h2 className="text-lg font-bold leading-tight mb-8 text-slate-800">{q.scenario}</h2>
+                        <div className="space-y-3">
+                            {q.options.map((opt, i) => (
+                                <button key={i} onClick={() => handleAnswer(i)} className={`w-full text-left p-4 rounded-2xl border-2 font-bold text-sm transition-all ${
+                                    showFeedback ? (i === q.correct ? 'border-emerald-500 bg-emerald-50 text-emerald-900' : (selected === i ? 'border-rose-500 bg-rose-50 text-rose-900' : 'opacity-30')) : 'border-slate-100 active:bg-slate-50'
+                                }`}>{opt}</button>
+                            ))}
+                        </div>
+                    </div>
+
+                    {showFeedback && (
+                        <div className="space-y-4 animate-in fade-in slide-in-from-bottom-4 duration-300">
+                            <div className="bg-indigo-600 text-white p-5 rounded-2xl shadow-lg">
+                                <p className="text-xs font-black uppercase opacity-70 mb-1">Fundamento Clínico</p>
+                                <p className="text-sm font-medium leading-relaxed">{q.context}</p>
+                            </div>
+                            <div className="bg-amber-50 border border-amber-100 p-5 rounded-2xl">
+                                <p className="text-xs font-black uppercase text-amber-600 mb-1">Dato para recordar</p>
+                                <p className="text-sm text-amber-900 italic">"{q.fact}"</p>
+                            </div>
+                            <button onClick={next} className="w-full bg-slate-900 text-white py-4 rounded-2xl font-black shadow-lg flex items-center justify-center gap-2">
+                                {currentIdx === 9 ? 'VER RESULTADOS' : 'SIGUIENTE PACIENTE'}
+                            </button>
+                        </div>
+                    )}
+                </div>
+            );
+        }
+
+        const root = ReactDOM.createRoot(document.getElementById('root'));
+        root.render(<App />);
+    </script>
+</body>
+</html>
